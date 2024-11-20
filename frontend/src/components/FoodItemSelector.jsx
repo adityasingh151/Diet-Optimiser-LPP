@@ -15,7 +15,7 @@ const FoodItemSelector = () => {
 
   const handleSubmit = async () => {
     try {
-      const response = await axios.post("https://diet-backend.onrender.com/optimize", {
+      const response = await axios.post("https://diet-backend-d1gj.onrender.com/optimize", {
         selected_items: selectedItems,
       });
       
