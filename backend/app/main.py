@@ -1,110 +1,53 @@
-import pandas as pd
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from pydantic import BaseModel
-from pulp import LpProblem, LpVariable, LpMinimize, lpSum, LpStatus
+from pulp import LpProblem, LpVariable, LpMinimize, lpSum
 from fastapi.middleware.cors import CORSMiddleware
-
 app = FastAPI()
 
-# Add CORS middleware for frontend integration
+# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://diet-frontend.onrender.com"],  # React app development server
+    allow_origins=["https://diet-frontend.onrender.com"],  # Replace with your frontend URL
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["*"],  # Allow all HTTP methods
+    allow_headers=["*"],  # Allow all headers
 )
 
-# Load the CSV file and preprocess the data
-try:
-    # Load the dataset
-    merged_data = pd.read_csv("data/merged_menu_data.csv")
 
-    # Enforce numeric types for relevant columns
-    numeric_columns = ["Price", "Calories", "Fat (g)", "Carbohydrates (g)", "Protein (g)", "Calcium (mg)"]
-    merged_data[numeric_columns] = merged_data[numeric_columns].apply(pd.to_numeric, errors="coerce")
-
-    # Drop rows with invalid numeric data
-    merged_data = merged_data.dropna(subset=numeric_columns)
-
-    # Ensure all columns are trimmed of unnecessary spaces
-    merged_data.columns = merged_data.columns.str.strip()
-
-    # Convert to dictionary
-    food_data = merged_data.set_index("Item").T.to_dict()
-    print("Data loaded and cleaned successfully.")
-except Exception as e:
-    print(f"Error loading data: {e}")
-    food_data = {}  # Fallback to empty data
 
 class FoodSelection(BaseModel):
     selected_items: list
 
-@app.get("/")
-def read_root():
-    """
-    Root endpoint for API health check.
-    """
-    return {"message": "Welcome to the Diet Optimization API!"}
-
-@app.get("/menu")
-def get_menu():
-    """
-    Endpoint to fetch menu items with their nutritional details.
-    """
-    if merged_data.empty:
-        raise HTTPException(status_code=500, detail="Menu data is not available.")
-    return merged_data.to_dict(orient="records")
+# Mock data for food items and their nutritional content
+food_data = {
+    "Paneer Toast": {"cost": 60, "protein": 8, "fat": 10, "carb": 28, "phos": 200, "vitC": 6, "calcium": 150},
+    "Grilled Sandwich": {"cost": 70, "protein": 6, "fat": 8.5, "carb": 35, "phos": 120, "vitC": 7, "calcium": 50},
+    "Aloo Samosa": {"cost": 10, "protein": 4, "fat": 11, "carb": 32, "phos": 100, "vitC": 10, "calcium": 30},
+}
 
 @app.post("/optimize")
 def optimize_diet(selection: FoodSelection):
-    """
-    Optimize the selection of food items to minimize cost while meeting nutritional constraints.
-    """
-    try:
-        print(f"Received selected items: {selection.selected_items}")  # Debugging
+    problem = LpProblem("DietOptimization", LpMinimize)
 
-        if not selection.selected_items:
-            raise HTTPException(status_code=400, detail="No food items selected.")
+    # Decision variables
+    food_vars = {item: LpVariable(item, lowBound=0, cat='Continuous') for item in selection.selected_items}
 
-        # Validate selected items
-        for item in selection.selected_items:
-            if item not in food_data:
-                print(f"Invalid item: {item}")  # Debugging
-                raise HTTPException(status_code=400, detail=f"Invalid food item: {item}")
+    # Objective function: Minimize cost
+    problem += lpSum([food_data[item]["cost"] * food_vars[item] for item in selection.selected_items])
 
-        print("All selected items are valid.")  # Debugging
+    # Nutritional constraints
+    problem += lpSum([food_data[item]["protein"] * food_vars[item] for item in selection.selected_items]) >= 55
+    problem += lpSum([food_data[item]["fat"] * food_vars[item] for item in selection.selected_items]) >= 46
+    problem += lpSum([food_data[item]["carb"] * food_vars[item] for item in selection.selected_items]) >= 180
+    problem += lpSum([food_data[item]["phos"] * food_vars[item] for item in selection.selected_items]) >= 700
+    problem += lpSum([food_data[item]["vitC"] * food_vars[item] for item in selection.selected_items]) >= 70
+    problem += lpSum([food_data[item]["calcium"] * food_vars[item] for item in selection.selected_items]) >= 800
 
-        problem = LpProblem("DietOptimization", LpMinimize)
+    # Solve the problem
+    problem.solve()
 
-        # Decision variables
-        food_vars = {item: LpVariable(item, lowBound=0, cat="Continuous") for item in selection.selected_items}
-        print(f"Decision variables: {food_vars}")  # Debugging
+    # Prepare the results
+    result = {item: food_vars[item].varValue for item in selection.selected_items if food_vars[item].varValue > 0}
+    total_cost = sum([food_data[item]["cost"] * result[item] for item in result])
 
-        # Objective function: Minimize cost
-        problem += lpSum([food_data[item]["Price"] * food_vars[item] for item in selection.selected_items])
-        print("Objective function added.")  # Debugging
-
-        # Nutritional constraints
-        problem += lpSum([food_data[item]["Protein (g)"] * food_vars[item] for item in selection.selected_items]) >= 55
-        problem += lpSum([food_data[item]["Fat (g)"] * food_vars[item] for item in selection.selected_items]) >= 46
-        problem += lpSum([food_data[item]["Carbohydrates (g)"] * food_vars[item] for item in selection.selected_items]) >= 180
-        problem += lpSum([food_data[item]["Calcium (mg)"] * food_vars[item] for item in selection.selected_items]) >= 800
-        print("Constraints added.")  # Debugging
-
-        # Solve the problem
-        problem.solve()
-        print(f"Solver status: {LpStatus[problem.status]}")  # Debugging
-
-        if LpStatus[problem.status] != "Optimal":
-            raise HTTPException(status_code=400, detail="Optimization failed. No feasible solution found.")
-
-        # Prepare results
-        result = {item: food_vars[item].varValue for item in selection.selected_items if food_vars[item].varValue > 0}
-        total_cost = sum([food_data[item]["Price"] * result[item] for item in result])
-
-        print(f"Optimization result: {result}, Total cost: {total_cost}")  # Debugging
-        return {"optimal_selection": result, "total_cost": total_cost}
-    except Exception as e:
-        print(f"Error during optimization: {e}")  # Log the error
-        raise HTTPException(status_code=500, detail="Internal Server Error")
+    return {"optimal_selection": result, "total_cost": total_cost}
