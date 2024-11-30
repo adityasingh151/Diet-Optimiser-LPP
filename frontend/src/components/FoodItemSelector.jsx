@@ -12,7 +12,7 @@ const FoodItemSelector = () => {
   // Fetch food items on component mount
   useEffect(() => {
     axios
-      .get("http://127.0.0.1:8000/menu")
+      .get("https://diet-backend-d1gj.onrender.com/menu")
       .then((response) => setFoodItems(response.data))
       .catch((error) => {
         console.error("Error fetching food items:", error);
