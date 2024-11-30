@@ -9,7 +9,7 @@ app = FastAPI()
 # Add CORS middleware for frontend integration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Corrected the origin URL
+    allow_origins=["https://diet-frontend.onrender.com"],  # Corrected the origin URL
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
