@@ -80,10 +80,10 @@ def optimize_diet(selection: FoodSelection):
         print("Objective function added.")  # Debugging
 
         # Nutritional constraints (Minimum requirements)
-        problem += lpSum([food_data[item]["Protein (g)"] * food_vars[item] for item in selection.selected_items]) >= 55
-        problem += lpSum([food_data[item]["Fat (g)"] * food_vars[item] for item in selection.selected_items]) >= 46
-        problem += lpSum([food_data[item]["Carbohydrates (g)"] * food_vars[item] for item in selection.selected_items]) >= 180
-        problem += lpSum([food_data[item]["Calcium (mg)"] * food_vars[item] for item in selection.selected_items]) >= 800
+        problem += lpSum([food_data[item]["Protein (g)"] * food_vars[item] for item in selection.selected_items]) >= 55/3
+        problem += lpSum([food_data[item]["Fat (g)"] * food_vars[item] for item in selection.selected_items]) >= 46/3
+        problem += lpSum([food_data[item]["Carbohydrates (g)"] * food_vars[item] for item in selection.selected_items]) >= 180/3
+        problem += lpSum([food_data[item]["Calcium (mg)"] * food_vars[item] for item in selection.selected_items]) >= 800/3
         print("Constraints added.")  # Debugging
 
         # Add variety constraint (maximum 3 of each item)
