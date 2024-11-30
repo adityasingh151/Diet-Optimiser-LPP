@@ -17,7 +17,7 @@ app.add_middleware(
 
 # Load and clean data
 try:
-    merged_data = pd.read_csv("backend/data/merged_menu_data.csv", on_bad_lines="skip")
+    merged_data = pd.read_csv("https://github.com/adityasingh151/Diet-Optimiser-LPP/raw/refs/heads/main/backend/data/merged_menu_data.csv", on_bad_lines="skip")
 
     # Clean column names
     merged_data.columns = merged_data.columns.str.strip()
