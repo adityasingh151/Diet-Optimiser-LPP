@@ -40,7 +40,7 @@ const FoodItemSelector = () => {
     }
 
     try {
-      const response = await axios.post("https://diet-frontend.onrender.com/optimize", {
+      const response = await axios.post("https://diet-backend-d1gj.onrender.com/optimize", {
         selected_items: selectedItems,
       });
 
