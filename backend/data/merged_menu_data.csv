@@ -1,5 +1,4 @@
-Item,Price,Variable ,"Weight per piece
-(g)",Calories,Fat (g),Cholesterol,Sodium,Carbohydrates (g),Protein (g),Calcium (mg),Iron,Pottassium,Vitamin D (mcg)
+Item,Price,Variable ,"Weight per piece(g)",Calories,Fat (g),Cholesterol,Sodium,Carbohydrates (g),Protein (g),Calcium (mg),Iron,Pottassium,Vitamin D (mcg)
 Aloo Toast,40,x1,50,133,1.6,0,188,24,6.3,94,1.1,359,0.1
 Paneer Toast,60,x2,248,476,27,42,1502,41,18,462,3,404.8,1.6
 Grilled Sandwich,70,x3,153,301,10,25,525,49,13,305,2.5,253.9,1
